@@ -36,9 +36,11 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/gist/config.yaml)")
 
-	rootCmd.AddCommand(setTokenCmd,
+	rootCmd.AddCommand(configCmd,
 		createGistCmd,
-		deleteGistCmd)
+		deleteGistCmd,
+		getGistCmd,
+		listGistCmd)
 }
 
 func initConfig() {

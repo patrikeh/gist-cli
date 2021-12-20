@@ -5,12 +5,22 @@ import (
 	"os"
 	"path"
 
+	githubclient "github.com/patrikeh/gist/githubClient"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var configCmd = &cobra.Command{
-	Use: "config set-url|set-token",
+	Use:   "config [set-url|set-token]",
+	Short: "Set persistent configuration.",
+	Long:  "Set persistent configuration.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Printf("%s\n", viper.ConfigFileUsed())
+		for k, v := range viper.AllSettings() {
+			fmt.Printf("%s: %s\n", k, v)
+		}
+		return nil
+	},
 }
 
 var setUrlCmd = &cobra.Command{
@@ -20,7 +30,7 @@ var setUrlCmd = &cobra.Command{
 	Long:     "Sets github URL in config.",
 	PostRunE: writeConfig,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 || args[0] == "" {
+		if len(args) != 1 {
 			return fmt.Errorf("Expected a single argument 'url'")
 		}
 		viper.Set("url", args[0])
@@ -35,7 +45,7 @@ var setTokenCmd = &cobra.Command{
 	Long:     "Sets github token. Can be generated at https://github.com/settings/tokens with gist privileges.",
 	PostRunE: writeConfig,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 || args[0] == "" {
+		if len(args) != 1 {
 			return fmt.Errorf("Expected a single argument 'access-token'")
 		}
 		viper.Set("access-token", args[0])
@@ -70,7 +80,20 @@ func getToken() (string, error) {
 func getUrl() (string, error) {
 	url := viper.GetString("url")
 	if len(url) == 0 {
-		return "https://github.com", nil
+		return "https://api.github.com/", nil
 	}
 	return url, nil
+}
+
+func getGithubClient() (*githubclient.Client, error) {
+	token, err := getToken()
+	if err != nil {
+		return nil, err
+	}
+	url, err := getUrl()
+	if err != nil {
+		return nil, err
+	}
+
+	return githubclient.New(token, url)
 }

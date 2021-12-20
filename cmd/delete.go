@@ -3,35 +3,31 @@ package cmd
 import (
 	"fmt"
 
-	githubclient "github.com/patrikeh/gist/githubClient"
 	"github.com/spf13/cobra"
 )
 
 var deleteGistCmd = &cobra.Command{
-	Args:    cobra.ExactArgs(1),
-	Use:     "delete ID",
+	Args:    cobra.MinimumNArgs(1),
+	Use:     "delete ID...",
 	Aliases: []string{"d"},
-	Short:   "Deletes a gist by ID.",
-	Long:    "Deletes a gist by ID.",
+	Short:   "Deletes gists by ID.",
+	Long: `Deletes gists by ID.
+
+Expects at least one ID. If multiple are present, deletes all specified gists.`,
 }
 
 func init() {
 	deleteGistCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 || args[0] == "" {
-			return fmt.Errorf("Expect single argument [ID]")
-		}
-
-		token, err := getToken()
+		client, err := getGithubClient()
 		if err != nil {
-			return err
+			return fmt.Errorf("error initializing github client: %w", err)
 		}
-
-		client := githubclient.New(token)
-
-		if err := client.DeleteGist(cmd.Context(), args[0]); err != nil {
-			return fmt.Errorf("error deleting gist %s: %w", args[0], err)
+		for _, gistId := range args {
+			if err := client.DeleteGist(cmd.Context(), gistId); err != nil {
+				return fmt.Errorf("error deleting gist %s: %w", gistId, err)
+			}
+			fmt.Printf("Deleted gist %s.\n", gistId)
 		}
-		fmt.Printf("Deleted gist %s.\n", args[0])
 		return nil
 	}
 }

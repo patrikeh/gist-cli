@@ -7,13 +7,7 @@ import (
 	"path"
 
 	"github.com/google/go-github/v41/github"
-	githubclient "github.com/patrikeh/gist/githubClient"
 	"github.com/spf13/cobra"
-)
-
-var (
-	isPublic bool
-	maxDepth int
 )
 
 var createGistCmd = &cobra.Command{
@@ -27,6 +21,11 @@ If a directory is specified, will include all files within that directory recurs
 }
 
 func init() {
+	var (
+		isPublic bool
+		maxDepth int
+	)
+
 	createGistCmd.Flags().BoolVarP(&isPublic, "public", "p", false, "If set, creates a public gist.")
 	createGistCmd.Flags().IntVarP(&maxDepth, "depth", "d", 1, "Maximum depth to recurse for directories.")
 
@@ -35,11 +34,10 @@ func init() {
 			return fmt.Errorf("expected at least 1 argument")
 		}
 
-		token, err := getToken()
+		client, err := getGithubClient()
 		if err != nil {
-			return err
+			return fmt.Errorf("error initializing github client: %w", err)
 		}
-		client := githubclient.New(token)
 
 		gist, err := buildGist(args, isPublic, maxDepth)
 		if err != nil {
@@ -48,7 +46,7 @@ func init() {
 
 		created, err := client.CreateGist(cmd.Context(), gist)
 		if err != nil {
-			return fmt.Errorf("error creating gist: %w", err)
+			return err
 		}
 
 		fmt.Printf("Created gist %s\nAvailable at %s\n", *created.ID, *created.HTMLURL)
@@ -65,6 +63,10 @@ func buildGist(filePaths []string, isPublic bool, depth int) (*github.Gist, erro
 
 	if err := addGistFiles(gist, filePaths, depth, 0); err != nil {
 		return nil, fmt.Errorf("error adding gist files: %w", err)
+	}
+
+	for key := range gist.Files {
+		fmt.Println(key)
 	}
 
 	if len(gist.Files) == 0 {
@@ -89,6 +91,9 @@ func addGistFiles(gist *github.Gist, filePaths []string, maxDepth int, depth int
 				return fmt.Errorf("unable to read content at path %s: %w", filePath, err)
 			}
 			contentStr := string(content)
+			if len(contentStr) == 0 {
+				continue
+			}
 			gist.Files[github.GistFilename(path.Base(filePath))] = github.GistFile{
 				Content: &contentStr,
 			}
@@ -105,7 +110,7 @@ func addGistFiles(gist *github.Gist, filePaths []string, maxDepth int, depth int
 			direntFilePaths = append(direntFilePaths, path.Join(filePath, dirent.Name()))
 		}
 
-		return addGistFiles(gist, direntFilePaths, maxDepth, depth+1)
+		addGistFiles(gist, direntFilePaths, maxDepth, depth+1)
 	}
 	return nil
 }
