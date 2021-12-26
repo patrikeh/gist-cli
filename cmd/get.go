@@ -6,8 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// -o --output filePath?
-
 var getGistCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Use:     "get ID",

@@ -51,5 +51,7 @@ func initConfig() {
 		cobra.CheckErr(err)
 		viper.SetConfigFile(path.Join(home, ".config", "gist", "config.yaml"))
 	}
+	viper.BindEnv("host", "GH_HOST")
+	viper.BindEnv("access-token", "GH_TOKEN")
 	viper.ReadInConfig()
 }
