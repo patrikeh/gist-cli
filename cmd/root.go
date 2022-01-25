@@ -17,15 +17,14 @@ var (
 	cfgFile string
 )
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Version: "1.0.0",
 	Use:     "gist [fileNames]",
 	Short:   "CLI for interacting with GitHub gists.",
-	Long:    `CLI tool for creating, deleting, listing GitHub gists.`,
 }
 
 func Execute() {
-	err := rootCmd.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		log.Fatalf("error executing command: %s", err)
 	}
@@ -34,9 +33,9 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/gist/config.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/gist/config.yaml)")
 
-	rootCmd.AddCommand(configCmd,
+	RootCmd.AddCommand(configCmd,
 		createGistCmd,
 		deleteGistCmd,
 		getGistCmd,
